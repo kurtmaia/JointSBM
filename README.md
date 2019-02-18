@@ -30,7 +30,7 @@
 
 4) The algorithm returns: 
 
-- Memberships $X$
-- Connectivity matrix $\Theta$
-- Global centers $W$
+- Memberships 
+- Connectivity matrix 
+- Global centers
 
