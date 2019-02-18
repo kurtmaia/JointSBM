@@ -8,7 +8,7 @@
 
 `pip install pandas sklearn joblib multiprocessing argparse`
 
-2)  Prepare data: (see ./data/ for examples)
+2)  Prepare data: (see data/ for examples)
 
  - Each graph needs to be in edge list format and `.edge` extension
 
@@ -26,7 +26,7 @@
 
 3) Call `joint_spec.py` as
 
-`python joint_spec.py --input ../data/N_500_varying_mu200size1_alpha_1.67/ --K 6 --parallel`
+`python joint_spec.py --input data/N_500_varying_mu200size1_alpha_1.67/ --K 6 --parallel`
 
 4) The algorithm returns: 
 
