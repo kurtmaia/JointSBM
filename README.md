@@ -26,7 +26,7 @@
 
 3) Call `joint_spec.py` as
 
-`python joint_spec.py --input ../data/N_500_varying_mu200size9_alpha_1.67/ --K 6 --parallel`
+`python joint_spec.py --input ../data/N_500_varying_mu200size1_alpha_1.67/ --K 6 --parallel`
 
 4) The algorithm returns: 
 
