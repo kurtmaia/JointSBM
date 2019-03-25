@@ -2,6 +2,7 @@ import argparse
 import numpy as np 
 import pandas as pd
 from joblib import Parallel, delayed
+from sklearn.cluster import KMeans
 import os
 
 from jointSBM import joint_spec
@@ -23,6 +24,10 @@ def parse_args():
 
 	parser.add_argument('--maxiter', type=int, default=200,
 	                    help='Maximum number of iterations. Default is 200.')
+
+	parser.add_argument('--useAdjacency', dest='laplacian', action='store_false')
+	parser.add_argument('--useLaplacian', dest='laplacian', action='store_true')
+	parser.set_defaults(laplacian=False)
 
 	parser.add_argument('--no-parallel', dest='parallel', action='store_false')
 	parser.add_argument('--parallel', dest='parallel', action='store_true')
@@ -90,31 +95,11 @@ def main(args):
 	
 	Graphs, trueMemberships = get_graphs()
 	
-	ans = joint_spec(Graphs, args.K, groundTruth = trueMemberships, maxIter = args.maxiter, parallel = args.parallel, n_cores = args.n_cores, seed = 21)
-	X = ans[0]
-	W = ans[1]
-	theta = ans[2]
-	if trueMemberships != None:
-		nmis = ans[3]
-		overall_nmi = ans[4]
-		nmis_dt = pd.DataFrame.from_dict({(i):nmis[i] for i in X.keys()},orient='index',columns = ['nmi'])
-		nmis_dt['overall_nmi'] = overall_nmi
-		nmis_dt.index.name = 'graph_id'
-		nmis_dt.reset_index(inplace=True)
-		nmis_dt.to_csv(output_path+"nmis.csv",index = False)
-		
-	
-	X_dt = pd.DataFrame.from_dict({(i,j):X[i][j] for i in X.keys() for j in X[i].keys()}, orient='index',columns = ['dish'])
+	ans = iso_spec(Graphs, args.K, useLaplacian = args.laplacian, groundTruth = trueMemberships, maxIter = args.maxiter, parallel = args.parallel, n_cores = args.n_cores, seed = 21)
 
-	X_dt.index.name = 'id'
-	X_dt.reset_index(inplace=True)
+	# print ans[1].shape
+	# print KMeans(n_clusters=args.K,random_state=3242).fit(np.reshape(ans[1],[-1,args.K])).labels_
 
-	W_dt = pd.DataFrame(W)
-	theta_dt = pd.DataFrame(theta)
-
-	X_dt.to_csv(output_path+"memberships.csv",index = False)
-	W_dt.to_csv(output_path+"W.csv",index = False, header=False)
-	theta_dt.to_csv(output_path+"theta.csv",index = False, header=False)
 
 if __name__ == "__main__":
 	args = parse_args()

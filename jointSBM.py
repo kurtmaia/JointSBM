@@ -1,6 +1,8 @@
 import numpy as np 
 from numpy.linalg import inv, cholesky, eig
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi
+from sklearn.metrics.cluster import adjusted_rand_score
+from sklearn.metrics.cluster import contingency_matrix
 from sklearn.cluster import KMeans
 
 from joblib import Parallel, delayed
@@ -100,8 +102,12 @@ def processLoop(Qn,W,Xn,V,Q_Qn,deltas2_n):
  		Xn[i,] = update_xni(Qn[i,],W,Xn[i,],V,Vn,Q_Qn)
  	return Xn
 
+def mcr(x,y):
+	cm = contingency_matrix(x,y)
+	return (cm.max(axis = 0).sum())*1./cm.sum()
 
-def joint_spec(graphs, K, tol = 1e-15, groundTruth = None, maxIter = 200, init = 'kmeans++', parallel = False, n_cores = -1,seed = 242):
+
+def joint_spec(graphs, K, tol = 1e-15, groundTruth = None, maxIter = 200, init = 'kmeans++', parallel = False, n_cores = -1,seed = 242, printLoss = True, printNMI = True, ARI = False, MCR = False):
 	if (type(graphs)!=dict):
 		graphNames = ["graph"+str(g) for g in range(1,len(graphs)+1)]
 		graphs = dict(zip(graphNames,graphs))
@@ -172,23 +178,37 @@ def joint_spec(graphs, K, tol = 1e-15, groundTruth = None, maxIter = 200, init =
 			loss[n] = deltas_[2][n]*frobenius_norm(XW-Q[n])**2 + frobenius_norm(np.matmul(Q[n],term))**2
 
 		Loss.append(np.sum(loss))
-		print "Iter:",iter,"| Loss:", Loss[iter]
+		if printLoss:
+			print "Iter:",iter,"| Loss:", Loss[iter]
 
 		stopValue =  abs(Loss[iter] - Loss[iter-1])	
 
 		if (groundTruth!=None):
 			individual_nmi = np.ndarray([n_graphs])
+			individual_ari = np.ndarray([n_graphs])
+			individual_mcr = np.ndarray([n_graphs])
 			for n in range(n_graphs):
 				individual_nmi[n] = nmi(np.reshape(groundTruth[n],[-1]),memberships[n])
+				if ARI:
+					individual_ari[n] = adjusted_rand_score(np.reshape(groundTruth[n],[-1]),memberships[n])
+				if MCR:
+					individual_mcr[n] = mcr(np.reshape(groundTruth[n],[-1]),memberships[n])
 
-			print "Individual NMI:", np.mean(individual_nmi)
-			
 
 			trueMemberships_stacked = np.reshape(np.hstack(groundTruth),[-1])
 			memberships_stacked = np.hstack(memberships)
 			overall_nmi = nmi(trueMemberships_stacked,memberships_stacked)
-
-			print "Overall NMI:", overall_nmi
+			if ARI:
+				overall_ari = adjusted_rand_score(trueMemberships_stacked,memberships_stacked)
+			else:
+				overall_ari = -1
+			if MCR:
+				overall_mcr = mcr(trueMemberships_stacked,memberships_stacked)
+			else:
+				overall_mcr = -1
+			if printNMI:
+				print "Individual NMI:", np.mean(individual_nmi)
+				print "Overall NMI:", overall_nmi
 
 	theta = estimate_theta(X,graphs)
 	order = np.argsort(-1*np.diag(theta),)
@@ -203,7 +223,7 @@ def joint_spec(graphs, K, tol = 1e-15, groundTruth = None, maxIter = 200, init =
 
 	memberships = dict(zip(graphNames,memberships))
 	if (groundTruth!=None):
-		return memberships, W, theta, dict(zip(graphNames,individual_nmi)), overall_nmi
+		return memberships, W, theta, dict(zip(graphNames,individual_nmi)), overall_nmi, individual_ari, overall_ari, individual_mcr, overall_mcr
 	else:
 		return memberships, W, theta
 
