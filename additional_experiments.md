@@ -10,7 +10,7 @@ Here, we include experiments using additional realignment steps (Iso2 and Iso3),
 #### Iso1
 
 1.  Rank diag(*θ*<sub>*n*</sub>)
-2.  Re-order *X*<sub>*n*</sub> and *θ*<sub>*n*</sub> accordintly
+2.  Re-order *X*<sub>*n*</sub> and *θ*<sub>*n*</sub> accordingly
 
 #### Iso2
 
@@ -20,7 +20,7 @@ Here, we include experiments using additional realignment steps (Iso2 and Iso3),
 #### Iso3
 
 1.  Search over all permutation to make all *W*<sub>*n*</sub> as close as possible
-2.  Re-order *X*<sub>*n*</sub> and *θ*<sub>*n*</sub> accordintly
+2.  Re-order *X*<sub>*n*</sub> and *θ*<sub>*n*</sub> accordingly
 
 ### Results
 
