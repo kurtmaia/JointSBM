@@ -24,10 +24,10 @@ Here, we include experiments using additional realignment steps (Iso2 and Iso3),
 
 ### Results
 
-#### Overall NMI
+#### Overall
 
 ![](overall_nmi.png)
 
-#### Individual NMI
+#### Individual
 
 ![](individual_nmi.png)
