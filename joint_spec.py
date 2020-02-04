@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 import os
 
 from jointSBM import joint_spec
-from isoSBM import iso_spec
+# from isoSBM import iso_spec
 
 import sys
 
