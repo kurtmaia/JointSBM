@@ -6,29 +6,15 @@
 
 1) Install requirements:
 
-`pip install pandas sklearn joblib multiprocessing argparse`
+`pip install -r requirements.txt`
 
-2)  Prepare data: (see data/ for examples)
+2)  Prepare data: (see data for examples)
 
- - Each graph needs to be in edge list format and `.edge` extension
+ - Each graph needs to be in edge list format or regular adjancency matrix
 
- ```Python
- "from","to"
-1,3
-1,8
-1,9
-1,15
-1,22
-...
+ - Cluster retrieval perfomance can be assessed if true memberships are available
 
- ```
- - True memberships need to have `.memb` extension (if available)
-
-3) Call `joint_spec.py` as
-
-`python joint_spec.py --input data/N_500_varying_mu200size1_alpha_1.67/ --K 6 --parallel`
-
-4) The algorithm returns: 
+3) The algorithm returns: 
 
 - Memberships 
 - Connectivity matrix 
