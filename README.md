@@ -4,19 +4,20 @@
 
 ## How to use?
 
-1) Install requirements:
+1. Install requirements:
 
-`pip install -r requirements.txt`
+```
+poetry install
+```
 
-2)  Prepare data: (see data for examples)
+2.  Prepare data: (see data for examples)
 
- - Each graph needs to be in edge list format or regular adjancency matrix
+- Each graph needs to be in edge list format or regular adjancency matrix
 
- - Cluster retrieval perfomance can be assessed if true memberships are available
+- Cluster retrieval perfomance can be assessed if true memberships are available
 
-3) The algorithm returns: 
+3. The algorithm returns:
 
-- Memberships 
-- Connectivity matrix 
+- Memberships
+- Connectivity matrix
 - Global centers
-
