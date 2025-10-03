@@ -18,6 +18,10 @@ scipy = "^1.16.2"
 [tool.poetry.group.dev.dependencies]
 tqdm = "^4.67.1"
 
+
+[tool.poetry.group.plotting.dependencies]
+seaborn = "^0.13.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

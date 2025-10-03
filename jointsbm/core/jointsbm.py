@@ -11,6 +11,8 @@ from sklearn.cluster import KMeans
 from jointsbm.core.graph import GraphHandler
 from jointsbm.utils.stats import estimateTheta, frobenius_norm, gen_design_matrix
 
+from .models import SBMResults
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,12 +80,6 @@ class SBMInitializer:
 
 
 @dataclass
-class SBMResults:
-    memberships: dict
-    theta: np.ndarray
-
-
-@dataclass
 class SBMEstimator:
     graphs: GraphHandler
     K: int
@@ -96,7 +92,7 @@ class SBMEstimator:
     def __post_init__(self):
         self.is_initialized = False
 
-    def fit(self):
+    def fit(self, return_soft_assignments=False):
         logger.info("Fitting SBM model...")
 
         if not self.is_initialized:
@@ -129,21 +125,18 @@ class SBMEstimator:
 
         logger.info("Fitting complete.")
         logger.info(f"Final loss = {loss:.6f}, total iterations = {iter}")
+        if return_soft_assignments:
+            self.update_memberships(return_membership=False)
 
-        memberships = {
-            g.name: self.X[i].argmax(axis=1) for i, g in enumerate(self.graphs)
-        }
-        theta = estimateTheta(self.X, [g.adjacency_matrix for g in self.graphs])
+        theta = self.get_connectivity_matrix(allow_self_loops=False)
         order = np.argsort(
             -1 * np.diag(theta),
         )
         theta = theta[order,][:, order]
         self.theta = theta
+        self.X = [self.X[i][:, order] for i in range(len(self.X))]
 
-        memberships = {
-            g.name: self.X[i][:, order].argmax(axis=1)
-            for i, g in enumerate(self.graphs)
-        }
+        memberships = {g.name: self.X[i] for i, g in enumerate(self.graphs)}
 
         return SBMResults(memberships=memberships, theta=theta)
 
@@ -200,20 +193,23 @@ class SBMEstimator:
             XXn.append(self.delta2n[graph_number] * self.gamma_n[graph_number])
         self.W = inv(np.sum(XXn, axis=0)) @ np.sum(XnQn, axis=0)
 
-    def update_memberships(self):
-
+    def update_memberships(self, return_membership=True):
         if self.parallel:
             _ = Parallel(n_jobs=-1)(
-                delayed(self.update_single_graph_memberships)(graph_number)
+                delayed(self.update_single_graph_memberships)(
+                    graph_number, return_membership=return_membership
+                )
                 for graph_number in range(self.graphs.n_graphs)
             )
         else:
             _ = [
-                self.update_single_graph_memberships(graph_number)
+                self.update_single_graph_memberships(
+                    graph_number, return_membership=return_membership
+                )
                 for graph_number in range(self.graphs.n_graphs)
             ]
 
-    def update_single_graph_memberships(self, graph_number):
+    def update_single_graph_memberships(self, graph_number, return_membership=True):
         logger.debug(f"Updating memberships for graph {graph_number}...")
         Vn = self.cluster_sizes_n[graph_number]
         V = self.cluster_sizes
@@ -227,18 +223,43 @@ class SBMEstimator:
                 rt,
                 fac[current_membership],
                 gamman[current_membership],
+                return_membership=return_membership,
             )
         return
 
-    def update_single_node_membership(self, q, rt, fac, gamman):
+    def update_single_node_membership(self, q, rt, fac, gamman, return_membership=True):
         dif = self.W - q
         term2 = ((q * np.sqrt(fac) + q * 1.0 / np.sqrt(rt)) ** 2).sum(axis=1)
         dist = np.diag(np.matmul(dif, dif.T)) * gamman + term2
-        membership = np.zeros(self.K)
-        membership[dist.argmin()] = 1
-        return membership
+        if return_membership:
+            membership = np.zeros(self.K)
+            membership[dist.argmin()] = 1
+            return membership
+        else:
+            return self.get_membership_probabilities(dist)
+
+    def get_connectivity_matrix(self, X=None, allow_self_loops=False):
+        if X is None:
+            X = self.X
+        total = np.zeros((self.K, self.K))
+        obs = np.zeros((self.K, self.K))
+        for i, x in enumerate(X):
+            n_nodes = x.shape[0]
+            __full_matrix = np.ones((n_nodes, n_nodes))
+            if allow_self_loops == False:
+                __full_matrix -= np.eye(n_nodes)
+            total += x.T @ __full_matrix @ x
+            obs += x.T @ self.graphs.graphs[i].adjacency_matrix @ x
+
+        return obs / total
 
     def predict(self):
         logger.info("Predicting community assignments...")
         # Predict community assignments
         pass
+
+    @staticmethod
+    def get_membership_probabilities(dist):
+        prob = np.exp(-dist)
+        prob = prob / prob.sum()
+        return prob
